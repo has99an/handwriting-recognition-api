@@ -1,0 +1,16 @@
+# Python virtuelle miljø
+venv/
+__pycache__/
+*.py[cod]
+
+# Logfiler
+*.log
+
+# TensorFlow relaterede filer
+*.h5
+*.pb
+
+# Andre
+*.db
+*.sqlite3
+*.pdf
