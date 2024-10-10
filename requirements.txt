@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+tensorflow
+pydantic
+opencv-python
+numpy
+pandas
+scikit-learn
+opencv-python
+numpy
+scikit-learn

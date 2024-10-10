@@ -52,4 +52,4 @@ model.fit(train_generator,
           callbacks=[early_stopping])
 
 # Gem den trænede model til senere brug
-model.save('C:\\HandwritingRecognition\\model.keras')  # Gemmer modellen som en .keras-fil
+model.save('C:\\ImageRecognitionOfHandwriting\\api-service\\training\\model.keras')  # Gemmer modellen som en .keras-fil
