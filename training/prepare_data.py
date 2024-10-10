@@ -55,6 +55,21 @@ def prepare_data(image_folder):
     
     print("Data er blevet gemt som .npy filer.")
 
+def process_image(image):
+    # Konverter PIL-billede til numpy-array
+    image = np.array(image)
+
+    # Tjek om billedet er i farver, og konverter til gråtoner
+    if image.ndim == 3:
+        image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+
+    # Resize og normaliser billedet
+    image = cv.resize(image, (32, 32))
+    image = image.astype('float32') / 255.0
+
+    # Tilføj en dimension (1, 32, 32, 1)
+    return np.expand_dims(image, axis=-1)[np.newaxis, ...]  # Tilføj batch dimension
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2 or sys.argv[1] not in ['train', 'test']:

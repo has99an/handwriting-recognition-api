@@ -1,9 +1,16 @@
+import sys
+import os
+
+# Tilføj stien til training mappen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
+from prepare_data import process_image  # Importer process_image funktionen
 
 app = FastAPI()
 
@@ -34,13 +41,8 @@ async def predict(file: UploadFile = File(...)):
     # Open the uploaded image file
     image = Image.open(file.file)
 
-    # Preprocess the image (resize and convert to grayscale if needed)
-    image = image.resize((32, 32))  # Resizing to 32x32 pixels
-    image = image.convert('L')  # Convert to grayscale
-    input_data = np.array(image).reshape(1, 32, 32, 1)  # Reshape for the model
-
-    # Normalize the image data
-    input_data = input_data.astype('float32') / 255.0  # Normalize to [0, 1]
+    # Preprocess the image using the process_image function
+    input_data = process_image(image)  # Opdateret til at bruge process_image
 
     # Make a prediction
     prediction = model.predict(input_data)
