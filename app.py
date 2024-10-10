@@ -1,15 +1,15 @@
 import sys
 import os
-
-# Tilføj stien til training mappen
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
-
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
+
+# Tilføj stien til training mappen
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
+
 from prepare_data import process_image  # Importer process_image funktionen
 
 app = FastAPI()
@@ -32,29 +32,51 @@ label_map = {
     58: 'w', 59: 'x', 60: 'y', 61: 'z'
 }
 
+# Global variabel til at gemme det behandlede billede
+processed_image_bytes = None
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the handwriting recognition API!"}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    # Open the uploaded image file
+    global processed_image_bytes  # Tilgå den globale variabel
+
+    # Åbn det uploadede billede
     image = Image.open(file.file)
 
-    # Preprocess the image using the process_image function
-    input_data = process_image(image)  # Opdateret til at bruge process_image
+    # Forbehandle billedet
+    input_data = process_image(image)
 
-    # Make a prediction
+    # Lav en forudsigelse
     prediction = model.predict(input_data)
     predicted_class = np.argmax(prediction, axis=1)
 
-    # Convert predicted class index to letter
+    # Konverter den forudsagte klasse til bogstav
     predicted_letter = label_map[int(predicted_class[0])]
 
-    # Return the predicted letter
+    # Behandl billedet til returnering
+    processed_image = process_image(image)
+    processed_image_pil = Image.fromarray((processed_image.squeeze() * 255).astype(np.uint8))
+
+    # Gem det behandlede billede i en BytesIO
+    img_byte_arr = io.BytesIO()
+    processed_image_pil.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+    processed_image_bytes = img_byte_arr.getvalue()  # Gem det i den globale variabel
+
+    # Returner den forudsagte bogstav
     return JSONResponse(content={'predicted_letter': predicted_letter})
 
-# Run the app using uvicorn
+@app.get("/predict/image")
+async def get_processed_image():
+    if processed_image_bytes is None:
+        return JSONResponse(content={'error': 'No processed image available.'}, status_code=404)
+    
+    return StreamingResponse(io.BytesIO(processed_image_bytes), media_type='image/png')
+
+# Kør app'en med uvicorn
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
