@@ -74,8 +74,8 @@ async def predict(file: UploadFile = File(...)):
     global generated_pdf
     generated_pdf = pdf_data  # Gem den genererede PDF i en global variabel
 
-    # Returner den forudsagte bogstav
-    return JSONResponse(content={'predicted_letter': predicted_letter})
+    # Returner PDF'en direkte
+    return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
 
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
@@ -92,13 +92,6 @@ async def get_processed_image():
         return JSONResponse(content={'error': 'No processed image available.'}, status_code=404)
     
     return StreamingResponse(io.BytesIO(processed_image_bytes), media_type='image/png')
-
-@app.get("/download/pdf")
-async def download_pdf():
-    if generated_pdf is None:
-        return JSONResponse(content={'error': 'No PDF available.'}, status_code=404)
-    
-    return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
 
 # Kør app'en med uvicorn
 if __name__ == "__main__":
