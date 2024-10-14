@@ -6,6 +6,8 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Tilføj stien til training mappen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
@@ -32,8 +34,9 @@ label_map = {
     58: 'w', 59: 'x', 60: 'y', 61: 'z'
 }
 
-# Global variabel til at gemme det behandlede billede
+# Global variabel til at gemme det behandlede billede og PDF
 processed_image_bytes = None
+generated_pdf = None
 
 @app.get("/")
 def read_root():
@@ -66,8 +69,22 @@ async def predict(file: UploadFile = File(...)):
     img_byte_arr.seek(0)
     processed_image_bytes = img_byte_arr.getvalue()  # Gem det i den globale variabel
 
+    # Generer PDF
+    pdf_data = create_pdf(predicted_letter)
+    global generated_pdf
+    generated_pdf = pdf_data  # Gem den genererede PDF i en global variabel
+
     # Returner den forudsagte bogstav
     return JSONResponse(content={'predicted_letter': predicted_letter})
+
+def create_pdf(text: str) -> bytes:
+    pdf_bytes = io.BytesIO()
+    c = canvas.Canvas(pdf_bytes, pagesize=letter)
+    width, height = letter
+    c.drawString(100, height - 100, text)
+    c.save()
+    pdf_bytes.seek(0)
+    return pdf_bytes.getvalue()
 
 @app.get("/predict/image")
 async def get_processed_image():
@@ -75,6 +92,13 @@ async def get_processed_image():
         return JSONResponse(content={'error': 'No processed image available.'}, status_code=404)
     
     return StreamingResponse(io.BytesIO(processed_image_bytes), media_type='image/png')
+
+@app.get("/download/pdf")
+async def download_pdf():
+    if generated_pdf is None:
+        return JSONResponse(content={'error': 'No PDF available.'}, status_code=404)
+    
+    return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
 
 # Kør app'en med uvicorn
 if __name__ == "__main__":
