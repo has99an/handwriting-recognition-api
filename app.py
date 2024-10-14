@@ -8,6 +8,7 @@ import tensorflow as tf
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from fastapi.middleware.cors import CORSMiddleware
 
 # Tilføj stien til training mappen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
@@ -15,6 +16,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'trainin
 from prepare_data import process_image  # Importer process_image funktionen
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],  # Tillad din Angular-app
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load your trained model
 model = tf.keras.models.load_model('training/model.keras')
