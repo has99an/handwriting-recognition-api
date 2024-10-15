@@ -6,6 +6,12 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
+from app import models, database
+from sqlalchemy.orm import Session
+import models
+from database import engine
+from auth import auth_router  # This import should be directly from the auth.py file
+
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,6 +52,16 @@ label_map = {
 # Global variabel til at gemme det behandlede billede og PDF
 processed_image_bytes = None
 generated_pdf = None
+
+
+
+# Bind the authentication router
+app.include_router(auth_router, prefix="/auth")
+
+# Database initialization
+models.Base.metadata.create_all(bind=database.engine)
+
+
 
 @app.get("/")
 def read_root():

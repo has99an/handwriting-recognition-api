@@ -10,3 +10,8 @@ opencv-python
 numpy
 scikit-learn
 reportlab
+passlib[bcrypt]
+pyjwt
+SQLAlchemy
+mysqlclient
+python-dotenv
