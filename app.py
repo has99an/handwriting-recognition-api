@@ -6,11 +6,11 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
-from app import models, database
 from sqlalchemy.orm import Session
 import models
 from database import engine
 from auth import auth_router  # This import should be directly from the auth.py file
+import models  # Import models from models.py, NOT from app
 
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -22,6 +22,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'trainin
 from prepare_data import process_image  # Importer process_image funktionen
 
 app = FastAPI()
+# Bind the authentication router
+app.include_router(auth_router, prefix="/auth")
+
+# Database initialization
+models.Base.metadata.create_all(bind=engine)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,12 +60,6 @@ processed_image_bytes = None
 generated_pdf = None
 
 
-
-# Bind the authentication router
-app.include_router(auth_router, prefix="/auth")
-
-# Database initialization
-models.Base.metadata.create_all(bind=database.engine)
 
 
 
