@@ -7,27 +7,22 @@ import numpy as np
 import tensorflow as tf
 import io
 from sqlalchemy.orm import Session
-import models
-from database import engine
-from auth import auth_router  # This import should be directly from the auth.py file
-import models  # Import models from models.py, NOT from app
-
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from models.user import User  # Importer User direkte
+from database.db import engine
+from routers.auth import auth_router  # Importer auth-routeren
 from fastapi.middleware.cors import CORSMiddleware
 
 # Tilføj stien til training mappen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
-
 from prepare_data import process_image  # Importer process_image funktionen
 
 app = FastAPI()
-# Bind the authentication router
 app.include_router(auth_router, prefix="/auth")
 
 # Database initialization
-models.Base.metadata.create_all(bind=engine)
-
+# Sørg for at 'User' modellen er importeret før dette
+from models import Base  # Importer Base for at kunne kalde create_all
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,10 +53,6 @@ label_map = {
 # Global variabel til at gemme det behandlede billede og PDF
 processed_image_bytes = None
 generated_pdf = None
-
-
-
-
 
 @app.get("/")
 def read_root():
@@ -104,6 +95,8 @@ async def predict(file: UploadFile = File(...)):
 
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
     c = canvas.Canvas(pdf_bytes, pagesize=letter)
     width, height = letter
     c.drawString(100, height - 100, text)

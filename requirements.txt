@@ -1,3 +1,4 @@
+Pillow
 fastapi
 uvicorn
 tensorflow
@@ -15,3 +16,4 @@ pyjwt
 SQLAlchemy
 mysqlclient
 python-dotenv
+imageio
