@@ -9,16 +9,17 @@ import io
 router = APIRouter()
 
 @router.post("/upload")
-async def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_image(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     # Process image, generate PDF
     processed_image, pdf_data = process_image(file.file)
-    
+
     # Save upload record in database
-    new_upload = Upload(image=file.filename, pdf=pdf_data)
+    new_upload = Upload(user_id=user_id, image=processed_image, pdf=pdf_data)
     db.add(new_upload)
     db.commit()
-    
+
     return StreamingResponse(io.BytesIO(pdf_data), media_type='application/pdf')
+
 
 @router.get("/history")
 def get_upload_history(user_id: int, db: Session = Depends(get_db)):

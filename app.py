@@ -1,6 +1,6 @@
 import sys
 import os
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
 import numpy as np
@@ -8,9 +8,12 @@ import tensorflow as tf
 import io
 from sqlalchemy.orm import Session
 from models.user import User  # Importer User direkte
-from database.db import engine
+from models.upload import Upload  # Importer Upload modellen
+from database.db import engine, get_db  # Importer get_db
 from routers.auth import auth_router  # Importer auth-routeren
 from fastapi.middleware.cors import CORSMiddleware
+
+
 
 # Tilføj stien til training mappen
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'training')))
@@ -59,7 +62,7 @@ def read_root():
     return {"message": "Welcome to the handwriting recognition API!"}
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     global processed_image_bytes  # Tilgå den globale variabel
 
     # Åbn det uploadede billede
@@ -89,6 +92,11 @@ async def predict(file: UploadFile = File(...)):
     pdf_data = create_pdf(predicted_letter)
     global generated_pdf
     generated_pdf = pdf_data  # Gem den genererede PDF i en global variabel
+
+    # Gem upload i databasen
+    new_upload = Upload(user_id=user_id, image=processed_image_bytes, pdf=generated_pdf)
+    db.add(new_upload)
+    db.commit()
 
     # Returner PDF'en direkte
     return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
