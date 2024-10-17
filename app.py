@@ -121,3 +121,25 @@ async def get_processed_image():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
+
+@app.get("/uploads/{user_id}")
+def get_user_uploads(user_id: int, db: Session = Depends(get_db)):
+    # Query the uploads based on the user_id
+    uploads = db.query(Upload).filter(Upload.user_id == user_id).all()
+    
+    if not uploads:
+        return JSONResponse(content={'error': 'No uploads found for this user.'}, status_code=404)
+    
+    # Prepare a list of uploads to return
+    upload_list = [
+        {
+            "id": upload.id,
+            "user_id": upload.user_id,
+            "image": upload.image,  # Optionally, handle how you want to return image info
+            "pdf": upload.pdf,      # Optionally, handle how you want to return pdf info
+            "created_at": upload.created_at
+        } for upload in uploads
+    ]
+    
+    return upload_list
