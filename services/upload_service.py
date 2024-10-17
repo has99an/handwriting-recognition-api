@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import Upload
+from models.upload import Upload
 from schemas.upload import UploadCreate
 
 def create_upload(upload: UploadCreate, db: Session):
@@ -7,6 +7,7 @@ def create_upload(upload: UploadCreate, db: Session):
         user_id=upload.user_id,
         image=upload.image,
         pdf=upload.pdf
+        # created_at vil blive fyldt automatisk af databasen
     )
     db.add(new_upload)
     db.commit()

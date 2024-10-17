@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class UploadCreate(BaseModel):
     user_id: int
@@ -10,6 +11,7 @@ class UploadResponse(BaseModel):
     user_id: int
     image: str
     pdf: str
+    created_at: datetime  # Tilføjet for at inkludere oprettelsestidspunktet
 
     class Config:
         orm_mode = True  # Tillad at konvertere ORM-objekter til JSON

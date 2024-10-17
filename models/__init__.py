@@ -1,2 +1,3 @@
-from .user import User  # Importer User-modellen
-from database.db import Base  # Importer Base fra database
+from .user import User
+from .upload import Upload
+from database.db import Base
