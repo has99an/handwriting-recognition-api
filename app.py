@@ -117,10 +117,7 @@ async def get_processed_image():
     
     return StreamingResponse(io.BytesIO(processed_image_bytes), media_type='image/png')
 
-# Kør app'en med uvicorn
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+
 
 
 @app.get("/uploads/{user_id}")
@@ -143,3 +140,8 @@ def get_user_uploads(user_id: int, db: Session = Depends(get_db)):
     ]
     
     return upload_list
+
+# Kør app'en med uvicorn
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
