@@ -1,6 +1,6 @@
 import sys
 import os
-from fastapi import FastAPI, File, UploadFile, Depends
+from fastapi import FastAPI, File, Form, UploadFile, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
 import numpy as np
@@ -60,47 +60,45 @@ generated_pdf = None
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the handwriting recognition API!"}
-
 @app.post("/predict")
-async def predict(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    global processed_image_bytes  # Tilgå den globale variabel
+async def predict(user_id: int = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+    global processed_image_bytes  # Access the global variable
 
-    # Åbn det uploadede billede
+    # Open the uploaded image
     image = Image.open(file.file)
 
-    # Forbehandle billedet
+    # Process the image (assuming process_image function exists)
     input_data = process_image(image)
 
-    # Lav en forudsigelse
+    # Make a prediction
     prediction = model.predict(input_data)
     predicted_class = np.argmax(prediction, axis=1)
 
-    # Konverter den forudsagte klasse til bogstav
+    # Convert the predicted class to a letter
     predicted_letter = label_map[int(predicted_class[0])]
 
-    # Behandl billedet til returnering
+    # Process the image to return
     processed_image = process_image(image)
     processed_image_pil = Image.fromarray((processed_image.squeeze() * 255).astype(np.uint8))
 
-    # Gem det behandlede billede i en BytesIO
+    # Save the processed image in a BytesIO
     img_byte_arr = io.BytesIO()
     processed_image_pil.save(img_byte_arr, format='PNG')
     img_byte_arr.seek(0)
-    processed_image_bytes = img_byte_arr.getvalue()  # Gem det i den globale variabel
+    processed_image_bytes = img_byte_arr.getvalue()  # Save it in the global variable
 
-    # Generer PDF
+    # Generate PDF
     pdf_data = create_pdf(predicted_letter)
     global generated_pdf
-    generated_pdf = pdf_data  # Gem den genererede PDF i en global variabel
+    generated_pdf = pdf_data  # Save the generated PDF in a global variable
 
-    # Gem upload i databasen
+    # Save upload in the database
     new_upload = Upload(user_id=user_id, image=processed_image_bytes, pdf=generated_pdf)
     db.add(new_upload)
     db.commit()
 
-    # Returner PDF'en direkte
+    # Return the PDF directly
     return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
-
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
     from reportlab.lib.pagesizes import letter
