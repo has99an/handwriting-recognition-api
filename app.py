@@ -12,7 +12,7 @@ from models.upload import Upload  # Importer Upload modellen
 from database.db import engine, get_db  # Importer get_db
 from routers.auth import auth_router  # Importer auth-routeren
 from fastapi.middleware.cors import CORSMiddleware
-
+import base64
 
 
 # Tilføj stien til training mappen
@@ -60,24 +60,24 @@ generated_pdf = None
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the handwriting recognition API!"}
+
+
 @app.post("/predict")
 async def predict(user_id: int = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
-    global processed_image_bytes  # Access the global variable
-
     # Open the uploaded image
     image = Image.open(file.file)
 
-    # Process the image (assuming process_image function exists)
+    # Process the image
     input_data = process_image(image)
 
     # Make a prediction
     prediction = model.predict(input_data)
     predicted_class = np.argmax(prediction, axis=1)
-
+  
     # Convert the predicted class to a letter
     predicted_letter = label_map[int(predicted_class[0])]
 
-    # Process the image to return
+    # Save the processed image
     processed_image = process_image(image)
     processed_image_pil = Image.fromarray((processed_image.squeeze() * 255).astype(np.uint8))
 
@@ -85,20 +85,28 @@ async def predict(user_id: int = Form(...), file: UploadFile = File(...), db: Se
     img_byte_arr = io.BytesIO()
     processed_image_pil.save(img_byte_arr, format='PNG')
     img_byte_arr.seek(0)
-    processed_image_bytes = img_byte_arr.getvalue()  # Save it in the global variable
+    processed_image_bytes = img_byte_arr.getvalue()
 
+    # Convert image to Base64
+    processed_image_base64 = base64.b64encode(processed_image_bytes).decode('utf-8')
+
+    # Print the Base64 encoded image
+    print("Processed Image Base64:", processed_image_base64)
+    
     # Generate PDF
     pdf_data = create_pdf(predicted_letter)
-    global generated_pdf
-    generated_pdf = pdf_data  # Save the generated PDF in a global variable
+    #print("PDF data length before encoding:", len(pdf_data))
+    # Convert PDF to Base64
+    generated_pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
 
     # Save upload in the database
-    new_upload = Upload(user_id=user_id, image=processed_image_bytes, pdf=generated_pdf)
+    new_upload = Upload(user_id=user_id, image=processed_image_base64, pdf=generated_pdf_base64)
     db.add(new_upload)
     db.commit()
 
     # Return the PDF directly
-    return StreamingResponse(io.BytesIO(generated_pdf), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
+    return StreamingResponse(io.BytesIO(pdf_data), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
+
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
     from reportlab.lib.pagesizes import letter

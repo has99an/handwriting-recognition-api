@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, TEXT  
 from sqlalchemy.orm import relationship
 from database.db import Base
 from datetime import datetime, timezone, timedelta
@@ -8,10 +8,9 @@ class Upload(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    image = Column(String(255), nullable=False)
-    pdf = Column(String(255), nullable=False)
+    image = Column(TEXT, nullable=False)  # Store Base64 encoded string
+    pdf = Column(TEXT, nullable=False)    # Store Base64 encoded string
 
-    # Angiv lokal tidszone (for eksempel CET)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=2))))  # Automatisk udfyldt ved insert
 
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone(timedelta(hours=2))))  # Automatisk tidsstempel
     user = relationship("User", back_populates="uploads")
