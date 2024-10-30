@@ -99,14 +99,31 @@ async def predict(user_id: int = Form(...), file: UploadFile = File(...), db: Se
     # Convert PDF to Base64
     generated_pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
 
+    # Print length of Base64 string before saving
+    print(f"Length of Base64 PDF string before saving: {len(generated_pdf_base64)}")
+
+    # Print length of Base64 string before saving
+    print(f"Length of Base64 image string after saving: {len(processed_image_base64)}")
+
     # Save upload in the database
     new_upload = Upload(user_id=user_id, image=processed_image_base64, pdf=generated_pdf_base64)
+
+    # Print PDF value before saving
+    print(f"PDF Base64 before saving: {new_upload.pdf}")
+
     db.add(new_upload)
     db.commit()
 
+    # Print PDF value after saving
+    print(f"PDF Base64 after saving: {new_upload.pdf}")
+  # Print length of Base64 string after saving
+    print(f"Length of Base64 PDF string after saving: {len(new_upload.pdf)}")
+    # Print length of Base64 string after saving
+    print(f"Length of Base64 image string after saving: {len(new_upload.image)}")
+
     # Return the PDF directly
     return StreamingResponse(io.BytesIO(pdf_data), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
-
+    
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
     from reportlab.lib.pagesizes import letter
