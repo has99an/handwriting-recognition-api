@@ -13,6 +13,8 @@ from database.db import engine, get_db  # Importer get_db
 from routers.auth import auth_router  # Importer auth-routeren
 from fastapi.middleware.cors import CORSMiddleware
 import base64
+from services.upload_service import create_upload
+from schemas.upload import UploadCreate
 
 
 # Tilføj stien til training mappen
@@ -90,13 +92,12 @@ async def predict(user_id: int = Form(...), file: UploadFile = File(...), db: Se
     generated_pdf_base64 = base64.b64encode(pdf_data).decode('utf-8')
 
     # Save upload in the database with original image
-    new_upload = Upload(user_id=user_id, image=original_image_base64, pdf=generated_pdf_base64)
-
-    db.add(new_upload)
-    db.commit()
+    new_upload = UploadCreate(user_id=user_id, image=original_image_base64, pdf=generated_pdf_base64)
+    create_upload(new_upload, db)  # Flytter gemningslogikken her
 
     # Return the PDF directly
     return StreamingResponse(io.BytesIO(pdf_data), media_type='application/pdf', headers={"Content-Disposition": "attachment; filename=recognized_text.pdf"})
+
 
 def create_pdf(text: str) -> bytes:
     pdf_bytes = io.BytesIO()
